@@ -310,10 +310,14 @@
             };
         }
 
-        // Enhanced fetch with API key
+        // Enhanced fetch with API key and CORS handling
         async function fetchWithApiKey(url) {
             try {
-                const response = await fetch(url, {
+                // GitHub Pages'te CORS sorunu için proxy kullan
+                const isGitHubPages = window.location.hostname.includes('github.io');
+                const proxyUrl = isGitHubPages ? 'https://cors-anywhere.herokuapp.com/' : '';
+                
+                const response = await fetch(proxyUrl + url, {
                     method: 'GET',
                     headers: getBinanceHeaders()
                 });
