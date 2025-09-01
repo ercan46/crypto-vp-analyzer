@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TradingView Style Change %VP</title>
-    <script src="config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
     <style>
     body {
@@ -281,12 +280,18 @@
     </div>
 
     <script>
-        // API Configuration'ı config.js'den al
-        const BINANCE_API_KEY = window.BINANCE_CONFIG?.API_KEY || 'API_KEY_NOT_FOUND';
-        const BINANCE_SECRET_KEY = window.BINANCE_CONFIG?.SECRET_KEY || 'SECRET_KEY_NOT_FOUND';
+        // API ayarları - CORS proxy ile
+        const baseProxyUrl = 'https://api.allorigins.win/raw?url=';
+        const binanceKlinesUrl = 'https://fapi.binance.com/fapi/v1/klines';
+        const binanceExchangeInfoUrl = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
         
-        const binanceFuturesApiUrl = 'https://fapi.binance.com/fapi/v1/klines';
-        const binanceFuturesExchangeInfoUrl = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
+        function getProxiedKlinesUrl(params) {
+            return baseProxyUrl + encodeURIComponent(binanceKlinesUrl + '?' + params);
+        }
+        
+        function getProxiedExchangeInfoUrl() {
+            return baseProxyUrl + encodeURIComponent(binanceExchangeInfoUrl);
+        }
         let currentTimeframe = document.getElementById('timeframe').value;
         let currentTimeRange = parseInt(document.getElementById('timeRange').value);
         let isUpdating = false;
@@ -302,43 +307,7 @@
         const chartTitle = document.getElementById('chartTitle');
         let currentSort = { column: 'buyPct', direction: 'desc' };
 
-        // API Headers function
-        function getBinanceHeaders() {
-            return {
-                'X-MBX-APIKEY': BINANCE_API_KEY,
-                'Content-Type': 'application/json'
-            };
-        }
-
-        // Enhanced fetch with API key and CORS handling
-        async function fetchWithApiKey(url) {
-            try {
-                // GitHub Pages'te CORS sorunu için proxy kullan
-                const isGitHubPages = window.location.hostname.includes('github.io');
-                const proxyUrl = isGitHubPages ? 'https://cors-anywhere.herokuapp.com/' : '';
-                
-                const response = await fetch(proxyUrl + url, {
-                    method: 'GET',
-                    headers: getBinanceHeaders()
-                });
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('API fetch error:', error);
-                throw error;
-            }
-        }
-
         window.addEventListener('DOMContentLoaded', function() {
-            // API Key kontrolü
-            if (BINANCE_API_KEY === 'API_KEY_NOT_FOUND' || BINANCE_API_KEY === 'YOUR_API_KEY_HERE') {
-                updateStatus('⚠️ API Key bulunamadı! config.js dosyasını kontrol edin.');
-                showError('API anahtarları config.js dosyasında ayarlanmalı!');
-                return;
-            }
-            
             console.log('Sayfa yüklendi, başlatılıyor...');
             initializeData();
             document.querySelectorAll('th.sortable').forEach(th => {
@@ -396,7 +365,9 @@
 
         async function fetchAllFuturesSymbols() {
             try {
-                const data = await fetchWithApiKey(binanceFuturesExchangeInfoUrl);
+                const response = await fetch(getProxiedExchangeInfoUrl());
+                if (!response.ok) throw new Error(`API Hatası: ${response.status}`);
+                const data = await response.json();
                 console.log('Sembol sayısı:', data.symbols.length);
                 return data.symbols
                     .filter(s => s.symbol.endsWith('USDT') && s.status === 'TRADING')
@@ -514,7 +485,10 @@
             try {
                 const candleLimit = getRequiredCandles();
                 console.log(`Veri çekiliyor: ${symbol}, timeframe: ${currentTimeframe}, limit: ${candleLimit}`);
-                const data = await fetchWithApiKey(`${binanceFuturesApiUrl}?symbol=${symbol}&interval=${currentTimeframe}&limit=${candleLimit}`);
+                const params = `symbol=${symbol}&interval=${currentTimeframe}&limit=${candleLimit}`;
+                const response = await fetch(getProxiedKlinesUrl(params));
+                if (!response.ok) throw new Error(`API Hatası: ${response.status}`);
+                const data = await response.json();
                 console.log(`${symbol} veri uzunluğu:`, data.length);
                 if (!data || data.length === 0) {
                     console.warn(`${symbol}: Boş veri`);
@@ -714,7 +688,10 @@
             try {
                 updateStatus(`${symbol} grafik yükleniyor...`);
                 const candleLimit = getRequiredCandles();
-                const data = await fetchWithApiKey(`${binanceFuturesApiUrl}?symbol=${symbol}&interval=${currentTimeframe}&limit=${candleLimit}`);
+                const params = `symbol=${symbol}&interval=${currentTimeframe}&limit=${candleLimit}`;
+                const response = await fetch(getProxiedKlinesUrl(params));
+                if (!response.ok) throw new Error(`API Hatası: ${response.status}`);
+                const data = await response.json();
                 console.log(`${symbol} grafik verisi:`, data.length);
                 if (!data || data.length === 0) throw new Error('Veri alınamadı');
                 const timestamps = [];
