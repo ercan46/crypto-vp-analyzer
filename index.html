@@ -280,8 +280,8 @@
     </div>
 
     <script>
-        const binanceFuturesApiUrl = 'https://fapi.binance.com/fapi/v1/klines';
-        const binanceFuturesExchangeInfoUrl = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
+        const binanceFuturesApiUrl = 'https://cors-anywhere.herokuapp.com/https://fapi.binance.com/fapi/v1/klines';
+        const binanceFuturesExchangeInfoUrl = 'https://cors-anywhere.herokuapp.com/https://fapi.binance.com/fapi/v1/exchangeInfo';
         let currentTimeframe = document.getElementById('timeframe').value;
         let currentTimeRange = parseInt(document.getElementById('timeRange').value);
         let isUpdating = false;
