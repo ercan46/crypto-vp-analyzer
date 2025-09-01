@@ -1,0 +1,6 @@
+# Binance API Keys - Güvenlik Dosyası
+# Bu dosyayı kimseyle paylaşmayın!
+
+config.js
+*.env
+api-keys.txt
